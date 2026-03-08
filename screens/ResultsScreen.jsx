@@ -55,13 +55,41 @@ export default function ResultsScreen({ navigation, route }) {
       const html = buildReportHTML(patient, { ...evaluation, commentQuad, commentSec });
 
       if (Platform.OS === 'web') {
-        // Web: abre janela de impressão A4 nativa do navegador
-        const win = window.open('', '_blank');
-        if (!win) { Alert.alert('Bloqueado', 'Permita popups para este site.'); return; }
-        win.document.write(html);
-        win.document.close();
-        // Aguarda carregar fontes/imagens antes de imprimir
-        win.onload = () => { win.focus(); win.print(); };
+        // Web: usa html2pdf.js para gerar PDF perfeito sem depender da impressora
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.onload = () => {
+          const container = document.createElement('div');
+          container.innerHTML = html;
+          container.style.position = 'absolute';
+          container.style.left = '-9999px';
+          document.body.appendChild(container);
+
+          const safeName = patient.name.replace(/[^a-zA-Z0-9]/g, '_');
+          window.html2pdf()
+            .set({
+              margin:      [8, 10, 8, 10], // mm: top, right, bottom, left
+              filename:    `PS2_${safeName}.pdf`,
+              image:       { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+              jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+              pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] },
+            })
+            .from(container)
+            .save()
+            .then(() => {
+              document.body.removeChild(container);
+              setPdfLoading(false);
+            })
+            .catch(e => {
+              Alert.alert('Erro ao gerar PDF', e.message);
+              document.body.removeChild(container);
+              setPdfLoading(false);
+            });
+        };
+        script.onerror = () => Alert.alert('Erro', 'Não foi possível carregar o gerador de PDF.');
+        document.head.appendChild(script);
+        return; // setPdfLoading será chamado dentro do .then()
       } else {
         // Mobile: gera arquivo PDF via expo-print
         const { uri } = await Print.printToFileAsync({ html, base64: false });
