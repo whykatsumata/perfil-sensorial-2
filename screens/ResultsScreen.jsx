@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  Share, Dimensions, Alert, ActivityIndicator, TextInput,
+  Share, Dimensions, Alert, ActivityIndicator, TextInput, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -53,16 +53,28 @@ export default function ResultsScreen({ navigation, route }) {
     try {
       setPdfLoading(true);
       const html = buildReportHTML(patient, { ...evaluation, commentQuad, commentSec });
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(uri, {
-          mimeType: 'application/pdf',
-          dialogTitle: `PS2 — ${patient.name}`,
-          UTI: 'com.adobe.pdf',
-        });
+
+      if (Platform.OS === 'web') {
+        // Web: abre janela de impressão A4 nativa do navegador
+        const win = window.open('', '_blank');
+        if (!win) { Alert.alert('Bloqueado', 'Permita popups para este site.'); return; }
+        win.document.write(html);
+        win.document.close();
+        // Aguarda carregar fontes/imagens antes de imprimir
+        win.onload = () => { win.focus(); win.print(); };
       } else {
-        Alert.alert('PDF gerado', `Arquivo salvo em:\n${uri}`);
+        // Mobile: gera arquivo PDF via expo-print
+        const { uri } = await Print.printToFileAsync({ html, base64: false });
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `PS2 — ${patient.name}`,
+            UTI: 'com.adobe.pdf',
+          });
+        } else {
+          Alert.alert('PDF gerado', `Arquivo salvo em:\n${uri}`);
+        }
       }
     } catch (e) {
       Alert.alert('Erro ao gerar PDF', e.message);
