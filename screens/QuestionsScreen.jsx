@@ -111,7 +111,7 @@ export default function QuestionsScreen({ navigation, route }) {
           <View style={s.progressTrack}>
             <View style={[s.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
           </View>
-          <Text style={s.progressLbl}>{Math.round(progress * 100)}% · {patient.name}</Text>
+          <Text style={s.progressLbl}>{Math.round(progress * 100)}% · {patient.name}{evaluation.evaluator ? ' · ' + evaluation.evaluator : ''}</Text>
         </View>
         {/* Botão sair para tela principal */}
         <TouchableOpacity onPress={saveAndExit} style={s.exitBtn}>

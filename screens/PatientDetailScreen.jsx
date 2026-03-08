@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, Alert,
+  StyleSheet, Alert, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -27,7 +27,17 @@ export default function PatientDetailScreen({ navigation, route }) {
     setEvals(ev.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)));
   }
 
-  async function startNewEval(evaluator = '') {
+  const [evalModalVisible, setEvalModalVisible] = useState(false);
+  const [newEvaluatorName, setNewEvaluatorName] = useState('');
+
+  function promptNewEval() {
+    setNewEvaluatorName('');
+    setEvalModalVisible(true);
+  }
+
+  async function startNewEval() {
+    const evaluator = newEvaluatorName.trim();
+    setEvalModalVisible(false);
     const ev = {
       id:         generateId(),
       patientId,
@@ -40,6 +50,13 @@ export default function PatientDetailScreen({ navigation, route }) {
       answers:    {},
     };
     await saveEvaluation(ev);
+    navigation.navigate('Questions', { evaluationId: ev.id, patientId });
+  }
+
+  async function reopenEval(ev) {
+    // Reabre avaliação completa para edição — mantém respostas, volta ao status draft
+    const updated = { ...ev, status: 'draft', sectionIdx: 0, finishedAt: null };
+    await saveEvaluation(updated);
     navigation.navigate('Questions', { evaluationId: ev.id, patientId });
   }
 
@@ -91,7 +108,7 @@ export default function PatientDetailScreen({ navigation, route }) {
         </View>
 
         {/* New eval button */}
-        <TouchableOpacity style={s.btnNewEval} onPress={() => startNewEval()} activeOpacity={0.85}>
+        <TouchableOpacity style={s.btnNewEval} onPress={promptNewEval} activeOpacity={0.85}>
           <Text style={s.btnNewEvalIcon}>＋</Text>
           <View>
             <Text style={s.btnNewEvalTitle}>Nova Avaliação</Text>
@@ -137,10 +154,23 @@ export default function PatientDetailScreen({ navigation, route }) {
                       <Text style={s.btnResumeTxt}>↩ Retomar</Text>
                     </TouchableOpacity>
                   ) : (
-                    <TouchableOpacity style={s.btnView}
-                      onPress={() => navigation.navigate('Results', { evaluationId: ev.id, patientId })}>
-                      <Text style={s.btnViewTxt}>📊 Ver Resultado</Text>
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity style={s.btnView}
+                        onPress={() => navigation.navigate('Results', { evaluationId: ev.id, patientId })}>
+                        <Text style={s.btnViewTxt}>📊 Ver Resultado</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={s.btnEdit}
+                        onPress={() => Alert.alert(
+                          'Editar respostas',
+                          'Isso reabrirá a avaliação para edição. O resultado atual será mantido até você finalizar novamente.',
+                          [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Editar', onPress: () => reopenEval(ev) },
+                          ]
+                        )}>
+                        <Text style={s.btnEditTxt}>✏️ Editar</Text>
+                      </TouchableOpacity>
+                    </>
                   )}
                 </View>
               </View>
@@ -150,6 +180,33 @@ export default function PatientDetailScreen({ navigation, route }) {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Modal nome do avaliador */}
+      {evalModalVisible && (
+        <View style={s.modalOverlay}>
+          <View style={s.modalBox}>
+            <Text style={s.modalTitle}>Nova Avaliação</Text>
+            <Text style={s.modalSub}>Nome do(a) avaliador(a) (opcional)</Text>
+            <TextInput
+              style={s.modalInput}
+              placeholder="Ex: Dra. Ana Lima"
+              placeholderTextColor="#B0A090"
+              value={newEvaluatorName}
+              onChangeText={setNewEvaluatorName}
+              autoFocus
+              autoCapitalize="words"
+            />
+            <View style={s.modalBtns}>
+              <TouchableOpacity style={s.modalBtnCancel} onPress={() => setEvalModalVisible(false)}>
+                <Text style={s.modalBtnCancelTxt}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.modalBtnOk} onPress={startNewEval}>
+                <Text style={s.modalBtnOkTxt}>Iniciar →</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -173,6 +230,18 @@ const s = StyleSheet.create({
   backBtnTxt: { fontSize: 18, color: 'white' },
   headerSub:   { fontSize: 10, color: '#C4703F', fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' },
   headerTitle: { fontSize: 20, fontWeight: '800', color: 'white' },
+  btnEdit:    { flex: 1, backgroundColor: '#EDE8E0', borderRadius: 10, padding: 10, alignItems: 'center' },
+  btnEditTxt: { fontSize: 13, fontWeight: '700', color: '#5C5050' },
+  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalBox:   { backgroundColor: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 380 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#1A1714', marginBottom: 4 },
+  modalSub:   { fontSize: 13, color: '#8C7B6B', marginBottom: 16 },
+  modalInput: { backgroundColor: '#F5F3EF', borderWidth: 2, borderColor: '#E0D8CC', borderRadius: 10, padding: 12, fontSize: 15, color: '#1A1714', marginBottom: 16 },
+  modalBtns:  { flexDirection: 'row', gap: 10 },
+  modalBtnCancel:    { flex: 1, backgroundColor: '#F0EAE0', borderRadius: 10, padding: 13, alignItems: 'center' },
+  modalBtnCancelTxt: { fontSize: 14, fontWeight: '600', color: '#5C5050' },
+  modalBtnOk:    { flex: 1, backgroundColor: '#C4703F', borderRadius: 10, padding: 13, alignItems: 'center' },
+  modalBtnOkTxt: { fontSize: 14, fontWeight: '700', color: 'white' },
   editBtn: { backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
   editBtnTxt: { color: 'white', fontSize: 13, fontWeight: '600' },
 
