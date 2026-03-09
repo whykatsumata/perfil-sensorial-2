@@ -64,14 +64,16 @@ export default function PatientsScreen({ navigation }) {
           ) : null}
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-          <TouchableOpacity style={s.logoutBtn} onPress={() => Alert.alert(
-            'Trocar de conta',
-            `Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`,
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Sair', style: 'destructive', onPress: logout },
-            ]
-          )}>
+          <TouchableOpacity style={s.logoutBtn} onPress={() => {
+            if (Platform.OS === 'web') {
+              if (window.confirm(`Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`)) logout();
+            } else {
+              Alert.alert('Trocar de conta',
+                `Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`,
+                [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sair', style: 'destructive', onPress: logout }]
+              );
+            }
+          }}>
             <Text style={s.logoutTxt}>⎋ Sair</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.addBtn} onPress={() => navigation.navigate('PatientForm', {})}>
