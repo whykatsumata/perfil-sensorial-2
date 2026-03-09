@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, TextInput,
+  StyleSheet, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import {
   saveEvaluation, generateId, calcAge, formatDate,
 } from '../data/storage';
 import { SECTIONS } from '../data/sensoryData';
+import ConfirmModal from '../components/ConfirmModal';
 
 const TOTAL_ITEMS = SECTIONS.reduce((s, x) => s + x.items.length, 0);
 
@@ -17,6 +18,7 @@ export default function PatientDetailScreen({ navigation, route }) {
   const { patientId } = route.params;
   const [patient,   setPatient]   = useState(null);
   const [evals,     setEvals]     = useState([]);
+  const [confirmDel, setConfirmDel] = useState(null); // { ev } quando aberto
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
@@ -67,13 +69,13 @@ export default function PatientDetailScreen({ navigation, route }) {
   }
 
   function confirmDelete(ev) {
-    Alert.alert('Excluir avaliação', 'Deseja excluir esta avaliação?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: async () => {
-        await deleteEvaluation(ev.id);
-        load();
-      }},
-    ]);
+    setConfirmDel(ev);
+  }
+
+  async function handleDeleteConfirmed() {
+    await deleteEvaluation(confirmDel.id);
+    setConfirmDel(null);
+    load();
   }
 
   function progressOf(ev) {
@@ -206,6 +208,14 @@ export default function PatientDetailScreen({ navigation, route }) {
           </View>
         </View>
       )}
+      <ConfirmModal
+        visible={!!confirmDel}
+        title="Excluir avaliação"
+        message="Deseja excluir esta avaliação? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => setConfirmDel(null)}
+      />
     </SafeAreaView>
   );
 }

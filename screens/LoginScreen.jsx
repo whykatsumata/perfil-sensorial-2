@@ -25,7 +25,7 @@ export default function LoginScreen() {
       await register(name.trim(), email.trim(), password);
     } else {
       const ok = await resetPassword(email.trim());
-      if (ok) Alert.alert('E-mail enviado', 'Verifique sua caixa de entrada para redefinir a senha.');
+      if (ok) { Platform.OS === 'web' ? window.alert('E-mail enviado! Verifique sua caixa de entrada.') : Alert.alert('E-mail enviado', 'Verifique sua caixa de entrada para redefinir a senha.'); }
       switchMode('login');
     }
   }

@@ -1,18 +1,20 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList, ScrollView,
-  StyleSheet, Alert, TextInput, Platform,
+  StyleSheet, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getPatients, getEvaluations, deletePatient, calcAge, formatDate } from '../data/storage';
 import { useAuth } from '../context/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function PatientsScreen({ navigation }) {
   const { user, logout } = useAuth();
   const [patients,  setPatients]  = useState([]);
   const [evalCount, setEvalCount] = useState({});
   const [search,    setSearch]    = useState('');
+  const [confirmDel, setConfirmDel] = useState(null);
 
   useFocusEffect(useCallback(() => {
     load();
@@ -28,17 +30,13 @@ export default function PatientsScreen({ navigation }) {
   }
 
   function confirmDelete(patient) {
-    Alert.alert(
-      'Excluir paciente',
-      `Excluir "${patient.name}" e todas as avaliações?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Excluir', style: 'destructive', onPress: async () => {
-          await deletePatient(patient.id);
-          load();
-        }},
-      ]
-    );
+    setConfirmDel(patient);
+  }
+
+  async function handleDeleteConfirmed() {
+    await deletePatient(confirmDel.id);
+    setConfirmDel(null);
+    load();
   }
 
   const filtered = patients.filter(p =>
@@ -151,6 +149,14 @@ export default function PatientsScreen({ navigation }) {
       )}
       <View style={{ height: 40 }} />
       </ScrollView>
+      <ConfirmModal
+        visible={!!confirmDel}
+        title="Excluir paciente"
+        message={confirmDel ? `Excluir "${confirmDel.name}" e todas as avaliações? Esta ação não pode ser desfeita.` : ''}
+        confirmLabel="Excluir"
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => setConfirmDel(null)}
+      />
     </SafeAreaView>
   );
 }

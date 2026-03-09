@@ -31,7 +31,7 @@ export default function PatientFormScreen({ navigation, route }) {
 
   async function save() {
     if (!form.name.trim()) {
-      Alert.alert('Campo obrigatório', 'Informe o nome do paciente.');
+      Platform.OS === 'web' ? window.alert('Informe o nome do paciente.') : Alert.alert('Campo obrigatório', 'Informe o nome do paciente.');
       return;
     }
     const patient = {

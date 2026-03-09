@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert,
+  View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -70,7 +70,9 @@ export default function QuestionsScreen({ navigation, route }) {
 
   async function goNext() {
     if (!secComplete) {
-      Alert.alert('Seção incompleta', `Ainda há ${section.items.length - secAnswered} item(ns) sem resposta.`);
+      Platform.OS === 'web'
+        ? window.alert(`Ainda há ${section.items.length - secAnswered} item(ns) sem resposta nesta seção.`)
+        : Alert.alert('Seção incompleta', `Ainda há ${section.items.length - secAnswered} item(ns) sem resposta.`);
       return;
     }
     const nextIdx = sectionIdx + 1;
