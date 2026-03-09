@@ -56,7 +56,6 @@ export default function PatientDetailScreen({ navigation, route }) {
   async function reopenEval(ev) {
     const updated = { ...ev, status: 'draft', sectionIdx: 0, finishedAt: null };
     await saveEvaluation(updated);
-    // reset garante que Questions monta do zero, sem instância antiga na pilha
     navigation.reset({
       index: 2,
       routes: [
@@ -167,15 +166,8 @@ export default function PatientDetailScreen({ navigation, route }) {
                         <Text style={s.btnViewTxt}>📊 Ver Resultado</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={s.btnEdit}
-                        onPress={() => Alert.alert(
-                          'Editar respostas',
-                          'Isso reabrirá a avaliação para edição. O resultado atual será mantido até você finalizar novamente.',
-                          [
-                            { text: 'Cancelar', style: 'cancel' },
-                            { text: 'Editar', onPress: () => reopenEval(ev) },
-                          ]
-                        )}>
-                        <Text style={s.btnEditTxt}>✏️ Editar</Text>
+                        onPress={() => navigation.navigate('Review', { evaluationId: ev.id, patientId })}>
+                        <Text style={s.btnEditTxt}>🔍 Revisar</Text>
                       </TouchableOpacity>
                     </>
                   )}
