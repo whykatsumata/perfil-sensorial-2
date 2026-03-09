@@ -29,12 +29,24 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-192.png",
         "backgroundColor": "#0F1923"
       },
-      "package": "com.ps2.app"
+      "package": "com.ps2.app",
+      "versionCode": 1,
+      "permissions": []
     },
     "ios": {
       "bundleIdentifier": "com.ps2.app"
+    },
+    "icon": "./assets/icon-192.png",
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

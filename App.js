@@ -1,8 +1,10 @@
-import { Platform, View, ActivityIndicator } from 'react-native';
+import { Platform, View, ActivityIndicator, Alert } from 'react-native';
+import * as Updates from 'expo-updates';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginScreen         from './screens/LoginScreen';
 import PatientsScreen      from './screens/PatientsScreen';
@@ -81,6 +83,25 @@ if (Platform.OS === 'web') {
 
 function AppNavigator() {
   const { user } = useAuth();
+
+  // Verifica atualizações OTA ao abrir o app (apenas no build nativo)
+  useEffect(() => {
+    if (__DEV__ || Platform.OS === 'web') return;
+    async function checkUpdate() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          Alert.alert(
+            'Atualização disponível',
+            'O app foi atualizado. Reinicie para aplicar as novidades.',
+            [{ text: 'Reiniciar agora', onPress: () => Updates.reloadAsync() }]
+          );
+        }
+      } catch (_) { /* sem internet ou em dev — ignora */ }
+    }
+    checkUpdate();
+  }, []);
 
   if (user === undefined) {
     return (

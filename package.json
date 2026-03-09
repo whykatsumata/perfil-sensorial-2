@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:android": "eas build -p android"
+    "build:android": "eas build -p android",
+    "publish": "eas update --branch production --message"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",
@@ -23,7 +24,8 @@
     "react-native": "0.74.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
-    "react-native-web": "~0.19.13"
+    "react-native-web": "~0.19.13",
+    "expo-updates": "~0.27.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
