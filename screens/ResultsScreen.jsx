@@ -64,7 +64,7 @@ export default function ResultsScreen({ navigation, route }) {
         const printHtml = html.replace('</style>', `
   @media print {
     html, body { width: 210mm; margin: 0 !important; padding: 0 !important; background: white !important; }
-    .page { padding: 12mm 15mm !important; }
+    .page { padding: 20mm !important; }
     .block { break-inside: avoid !important; page-break-inside: avoid !important; }
   }
   /* Botão fixo no canto — desaparece ao imprimir */

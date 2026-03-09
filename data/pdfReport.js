@@ -111,7 +111,7 @@ export function buildReportHTML(patient, evaluation) {
     max-width: 210mm;
     margin: 0 auto;
   }
-  .page  { padding: 12mm 15mm; }
+  .page  { padding: 20mm; }
   .block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 16px; }
   .card  { background: #F0EAE0; border-radius: 10px; padding: 14px 16px; }
   .sec-title {
@@ -120,7 +120,7 @@ export function buildReportHTML(patient, evaluation) {
     break-after: avoid; page-break-after: avoid;
   }
   .sec-sub { font-size: 9px; color: #B0A090; margin-bottom: 10px; }
-  @page  { size: A4; margin: 10mm 12mm; }
+  @page  { size: A4; margin: 20mm; }
   @media print {
     html, body { background: white !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; }
     .page      { padding: 0 !important; }
