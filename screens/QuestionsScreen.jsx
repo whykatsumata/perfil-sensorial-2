@@ -8,7 +8,6 @@ import { SECTIONS, OPTIONS, QUADRANT_META } from '../data/sensoryData';
 import { getEvaluations, getPatients, saveEvaluation } from '../data/storage';
 
 export default function QuestionsScreen({ navigation, route }) {
-  const { evaluationId, patientId } = route.params;
   const [evaluation, setEvaluation] = useState(null);
   const [patient,    setPatient]    = useState(null);
   const [sectionIdx, setSectionIdx] = useState(0);
@@ -20,11 +19,13 @@ export default function QuestionsScreen({ navigation, route }) {
   useFocusEffect(useCallback(() => {
     load();
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  // reopen param forces reload when editing a completed evaluation
+  // Lê route.params dentro do load para sempre pegar os valores mais recentes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route.params?.reopen]));
+  }, [route.params?.reopen, route.params?.evaluationId]));
 
   async function load() {
+    // Lê params aqui para garantir valores atuais mesmo quando a tela é reusada
+    const { evaluationId, patientId } = route.params;
     const evs = await getEvaluations(patientId);
     const ev  = evs.find(e => e.id === evaluationId);
     if (!ev) { navigation.goBack(); return; }
@@ -83,7 +84,7 @@ export default function QuestionsScreen({ navigation, route }) {
     } else {
       const finished = { ...evalRef.current, answers, sectionIdx, status: 'complete', finishedAt: new Date().toISOString() };
       await saveEvaluation(finished);
-      navigation.replace('Results', { evaluationId, patientId });
+      navigation.replace('Results', { evaluationId: route.params.evaluationId, patientId: route.params.patientId });
     }
   }
 
