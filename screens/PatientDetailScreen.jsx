@@ -54,11 +54,17 @@ export default function PatientDetailScreen({ navigation, route }) {
   }
 
   async function reopenEval(ev) {
-    // Reabre avaliação completa para edição — mantém respostas, volta ao status draft
     const updated = { ...ev, status: 'draft', sectionIdx: 0, finishedAt: null };
     await saveEvaluation(updated);
-    // Usa push para forçar nova instância da tela e recarregar dados do Firestore
-    navigation.push('Questions', { evaluationId: ev.id, patientId, reopen: Date.now() });
+    // reset garante que Questions monta do zero, sem instância antiga na pilha
+    navigation.reset({
+      index: 2,
+      routes: [
+        { name: 'Patients' },
+        { name: 'PatientDetail', params: { patientId } },
+        { name: 'Questions', params: { evaluationId: ev.id, patientId } },
+      ],
+    });
   }
 
   function confirmDelete(ev) {
