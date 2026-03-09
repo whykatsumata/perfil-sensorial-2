@@ -7,7 +7,9 @@ import { db, auth } from './firebase';
 
 // ── Helpers de coleção ──────────────────────────────────────
 function uid() {
-  return auth.currentUser?.uid;
+  const u = auth.currentUser?.uid;
+  if (!u) throw new Error('Usuário não autenticado.');
+  return u;
 }
 function patientsRef()    { return collection(db, 'users', uid(), 'patients'); }
 function evaluationsRef() { return collection(db, 'users', uid(), 'evaluations'); }

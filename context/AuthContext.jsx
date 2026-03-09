@@ -28,7 +28,10 @@ export function AuthProvider({ children }) {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
-      setUser({ ...cred.user, displayName: name });
+      // onAuthStateChanged vai atualizar o user automaticamente
+      // forçamos reload do user para garantir displayName atualizado
+      await cred.user.reload();
+      setUser(auth.currentUser);
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {

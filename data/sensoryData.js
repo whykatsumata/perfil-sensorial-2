@@ -226,7 +226,7 @@ export const QUADRANTS = [
     emoji: '🔵',
     color: '#3A6DB5', colorLight: '#E8F0FB',
     desc: 'A criança fica incomodada por estímulos sensoriais e se afasta em uma taxa mais elevada.',
-    maxScore: 100,
+    maxScore: 90,
   },
   {
     id: 'SN', name: 'Sensibilidade',
@@ -235,7 +235,7 @@ export const QUADRANTS = [
     emoji: '🟢',
     color: '#4A9B5A', colorLight: '#E8F5EB',
     desc: 'A criança detecta estímulos sensoriais e os percebe em uma taxa mais elevada que outros.',
-    maxScore: 95,
+    maxScore: 100,
   },
   {
     id: 'OB', name: 'Observação',

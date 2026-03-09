@@ -110,6 +110,7 @@ export default function PatientsScreen({ navigation }) {
         <View style={{ padding: 16, paddingTop: 8 }}>
           {filtered.map(p => (
             <TouchableOpacity
+              key={p.id}
               style={s.patientCard}
               onPress={() => navigation.navigate('PatientDetail', { patientId: p.id })}
               activeOpacity={0.85}

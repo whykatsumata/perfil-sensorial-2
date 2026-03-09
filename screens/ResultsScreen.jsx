@@ -1,18 +1,17 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  Share, Dimensions, Alert, ActivityIndicator, TextInput, Platform,
+  Share, Alert, ActivityIndicator, TextInput, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { SECTIONS, QUADRANTS, calcScores, getClassification } from '../data/sensoryData';
-import { getEvaluations, getPatients, formatDate, calcAge } from '../data/storage';
+import { getEvaluations, getPatients, saveEvaluation, formatDate, calcAge } from '../data/storage';
 import { buildReportHTML } from '../data/pdfReport';
 
-const { width: SW } = Dimensions.get('window');
-const SEC_EMOJI = { auditivo:'👂', visual:'👁', tatil:'✋', movimento:'🌀', proprioceptivo:'💪', oral:'👅', olfativo:'👃', conduta:'🧠' };
+const SEC_EMOJI = { auditivo:'👂', visual:'👁', tato:'✋', movimento:'🌀', posicao:'💪', oral:'👅', conduta:'🧠', socioemocional:'❤️', atencao:'🧩' };
 
 export default function ResultsScreen({ navigation, route }) {
   const { evaluationId, patientId } = route.params;
@@ -42,8 +41,7 @@ export default function ResultsScreen({ navigation, route }) {
 
   // ── Salvar comentário ───────────────────────────────────
   async function saveComment(field, value) {
-    const { saveEvaluation } = await import('../data/storage');
-    const updated = { ...evaluation, [field]: value };
+    const updated = { ...evaluation, commentQuad, commentSec, [field]: value };
     await saveEvaluation(updated);
     setEvaluation(updated);
   }
@@ -263,11 +261,11 @@ export default function ResultsScreen({ navigation, route }) {
         <View style={s.legendCard}>
           <Text style={s.legendTitle}>LEGENDA DE CLASSIFICAÇÃO</Text>
           {[
-            { label: 'Muito Menos que os Típicos', color: '#B85C6E', bg: '#FFEEF2', range: '0–35%' },
-            { label: 'Menos que os Típicos',       color: '#C4703F', bg: '#FFF0E8', range: '36–50%' },
-            { label: 'Semelhante aos Típicos',     color: '#5A8C5A', bg: '#EEF7EE', range: '51–75%' },
-            { label: 'Mais que os Típicos',        color: '#4A6FA5', bg: '#EEF3FF', range: '76–88%' },
-            { label: 'Muito Mais que os Típicos',  color: '#7A5C9A', bg: '#F3EEFF', range: '89–100%' },
+            { label: 'Muito menos que outros(as)', color: '#C0547A', bg: '#FAEDF2', range: '0–13%' },
+            { label: 'Menos que outros(as)',        color: '#E07B2A', bg: '#FEF0E3', range: '14–36%' },
+            { label: 'Exatamente como a maioria',  color: '#4A9B5A', bg: '#E8F5EB', range: '37–72%' },
+            { label: 'Mais que outros(as)',         color: '#3A6DB5', bg: '#E8F0FB', range: '73–88%' },
+            { label: 'Muito mais que outros(as)',   color: '#7A5C9A', bg: '#F3EEFF', range: '89–100%' },
           ].map(item => (
             <View key={item.label} style={s.legendRow}>
               <View style={[s.legendDot, { backgroundColor: item.color }]} />
@@ -373,7 +371,7 @@ const s = StyleSheet.create({
   diagTxt:  { fontSize: 12, color: '#1A1714', flex: 1 },
 
   quadGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  quadCard: { width: (SW - 42) / 2, backgroundColor: 'white', borderRadius: 14, padding: 14, borderTopWidth: 4, elevation: 2 },
+  quadCard: { width: '48%', backgroundColor: 'white', borderRadius: 14, padding: 14, borderTopWidth: 4, elevation: 2 },
   quadEmoji: { fontSize: 20, marginBottom: 6 },
   quadName:  { fontSize: 13, fontWeight: '800', marginBottom: 4 },
   quadDesc:  { fontSize: 10, color: '#8C7B6B', lineHeight: 14, marginBottom: 10 },
