@@ -3,11 +3,8 @@
     "name": "Perfil Sensorial 2",
     "slug": "perfil-sensorial-2",
     "version": "1.0.0",
-    "orientation": "portrait",
     "sdkVersion": "54.0.0",
     "platforms": [
-      "ios",
-      "android",
       "web"
     ],
     "web": {
@@ -26,15 +23,6 @@
         "mobile-web-app-capable": "yes",
         "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
       }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#0F1923"
-      },
-      "package": "com.ps2.app"
-    },
-    "ios": {
-      "bundleIdentifier": "com.ps2.app"
     }
   }
 }
