@@ -20,7 +20,9 @@ export default function QuestionsScreen({ navigation, route }) {
   useFocusEffect(useCallback(() => {
     load();
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, []));
+  // reopen param forces reload when editing a completed evaluation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.reopen]));
 
   async function load() {
     const evs = await getEvaluations(patientId);

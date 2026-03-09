@@ -57,7 +57,8 @@ export default function PatientDetailScreen({ navigation, route }) {
     // Reabre avaliação completa para edição — mantém respostas, volta ao status draft
     const updated = { ...ev, status: 'draft', sectionIdx: 0, finishedAt: null };
     await saveEvaluation(updated);
-    navigation.navigate('Questions', { evaluationId: ev.id, patientId });
+    // Usa push para forçar nova instância da tela e recarregar dados do Firestore
+    navigation.push('Questions', { evaluationId: ev.id, patientId, reopen: Date.now() });
   }
 
   function confirmDelete(ev) {
