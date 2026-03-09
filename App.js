@@ -104,7 +104,8 @@ function AppNavigator() {
             <Stack.Screen name="Patients"      component={PatientsScreen} />
             <Stack.Screen name="PatientForm"   component={PatientFormScreen} />
             <Stack.Screen name="PatientDetail" component={PatientDetailScreen} />
-            <Stack.Screen name="Questions"     component={QuestionsScreen} />
+            <Stack.Screen name="Questions"     component={QuestionsScreen}
+              getId={({ params }) => `${params?.evaluationId}-${params?.reopen ?? 0}`} />
             <Stack.Screen name="Results"       component={ResultsScreen} />
           </>
         ) : (
