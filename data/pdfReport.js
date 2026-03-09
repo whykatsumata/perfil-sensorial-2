@@ -107,8 +107,8 @@ export function buildReportHTML(patient, evaluation) {
     font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
     background: #F5F3EF;
     color: #1A1714;
-    /* largura A4 exata */
-    width: 210mm;
+    width: 100%;
+    max-width: 210mm;
     margin: 0 auto;
   }
   .page  { padding: 12mm 15mm; }
@@ -120,10 +120,12 @@ export function buildReportHTML(patient, evaluation) {
     break-after: avoid; page-break-after: avoid;
   }
   .sec-sub { font-size: 9px; color: #B0A090; margin-bottom: 10px; }
-  @page  { size: A4; margin: 0; }
+  @page  { size: A4; margin: 10mm 12mm; }
   @media print {
-    body    { background: white; }
-    .block  { break-inside: avoid; page-break-inside: avoid; }
+    html, body { background: white !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; }
+    .page      { padding: 0 !important; }
+    .block     { break-inside: avoid !important; page-break-inside: avoid !important; }
+    .sec-title { break-after: avoid !important; page-break-after: avoid !important; }
   }
 </style>
 </head>

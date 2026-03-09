@@ -55,41 +55,37 @@ export default function ResultsScreen({ navigation, route }) {
       const html = buildReportHTML(patient, { ...evaluation, commentQuad, commentSec });
 
       if (Platform.OS === 'web') {
-        // Web: usa html2pdf.js para gerar PDF perfeito sem depender da impressora
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-        script.onload = () => {
-          const container = document.createElement('div');
-          container.innerHTML = html;
-          container.style.position = 'absolute';
-          container.style.left = '-9999px';
-          document.body.appendChild(container);
-
-          const safeName = patient.name.replace(/[^a-zA-Z0-9]/g, '_');
-          window.html2pdf()
-            .set({
-              margin:      [8, 10, 8, 10], // mm: top, right, bottom, left
-              filename:    `PS2_${safeName}.pdf`,
-              image:       { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-              jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-              pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] },
-            })
-            .from(container)
-            .save()
-            .then(() => {
-              document.body.removeChild(container);
-              setPdfLoading(false);
-            })
-            .catch(e => {
-              Alert.alert('Erro ao gerar PDF', e.message);
-              document.body.removeChild(container);
-              setPdfLoading(false);
-            });
-        };
-        script.onerror = () => Alert.alert('Erro', 'Não foi possível carregar o gerador de PDF.');
-        document.head.appendChild(script);
-        return; // setPdfLoading será chamado dentro do .then()
+        // Web: abre relatório em nova aba já pronto para Ctrl+P / Salvar como PDF
+        const win = window.open('', '_blank');
+        if (!win) {
+          Alert.alert('Popup bloqueado', 'Permita popups para este site nas configurações do navegador.');
+          setPdfLoading(false);
+          return;
+        }
+        // Injeta CSS de impressão A4 perfeito direto no HTML
+        const printHtml = html.replace('</style>', `
+  @media print {
+    html, body { width: 210mm; margin: 0 !important; padding: 0 !important; background: white !important; }
+    .page { padding: 12mm 15mm !important; }
+    .block { break-inside: avoid !important; page-break-inside: avoid !important; }
+  }
+  /* Botão fixo no canto — desaparece ao imprimir */
+  #print-btn {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: #C4703F; color: white; border: none; border-radius: 12px;
+    padding: 14px 22px; font-size: 15px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(196,112,63,0.4);
+  }
+  @media print { #print-btn { display: none !important; } }
+</style>`);
+        const finalHtml = printHtml.replace('</body>', `
+  <button id="print-btn" onclick="window.print()">🖨️ Salvar / Imprimir PDF</button>
+</body>`);
+        win.document.open();
+        win.document.write(finalHtml);
+        win.document.close();
+        setPdfLoading(false);
+        return;
       } else {
         // Mobile: gera arquivo PDF via expo-print
         const { uri } = await Print.printToFileAsync({ html, base64: false });

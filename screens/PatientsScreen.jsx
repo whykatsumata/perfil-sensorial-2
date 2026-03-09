@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, FlatList,
-  StyleSheet, Alert, TextInput,
+  View, Text, TouchableOpacity, FlatList, ScrollView,
+  StyleSheet, Alert, TextInput, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -47,6 +47,13 @@ export default function PatientsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.safe}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        stickyHeaderIndices={Platform.OS === 'web' ? [] : []}
+      >
       {/* Header */}
       <View style={s.header}>
         <View style={{ flex: 1 }}>
@@ -88,11 +95,9 @@ export default function PatientsScreen({ navigation }) {
 
       {/* Stats bar */}
       <View style={s.statsBar}>
-        <StatChip num={patients.length}                         label="Pacientes" color="#C4703F" />
+        <StatChip num={patients.length} label="Pacientes" color="#C4703F" />
         <StatChip num={Object.values(evalCount).reduce((a,b)=>a+b,0)} label="Avaliações" color="#4A6FA5" />
-        <StatChip num={Object.values(evalCount).filter((_,i)=> {
-          const p = patients[i]; return p && evalCount[p?.id] > 0;
-        }).length} label="Com avaliação" color="#5A8C5A" />
+        <StatChip num={patients.filter(p => evalCount[p.id] > 0).length} label="Com avaliação" color="#5A8C5A" />
       </View>
 
       {filtered.length === 0 ? (
@@ -102,12 +107,8 @@ export default function PatientsScreen({ navigation }) {
           <Text style={s.emptySub}>{search ? 'Tente outro nome' : 'Toque em "+ Paciente" para cadastrar'}</Text>
         </View>
       ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={p => p.id}
-          contentContainerStyle={{ padding: 16, paddingTop: 8 }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item: p }) => (
+        <View style={{ padding: 16, paddingTop: 8 }}>
+          {filtered.map(p => (
             <TouchableOpacity
               style={s.patientCard}
               onPress={() => navigation.navigate('PatientDetail', { patientId: p.id })}
@@ -138,9 +139,11 @@ export default function PatientsScreen({ navigation }) {
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </View>
       )}
+      <View style={{ height: 40 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
