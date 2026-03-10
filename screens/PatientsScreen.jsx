@@ -62,6 +62,9 @@ export default function PatientsScreen({ navigation }) {
           ) : null}
         </View>
         <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <TouchableOpacity style={s.trashBtn} onPress={() => navigation.navigate('Trash')}>
+            <Text style={s.trashBtnTxt}>🗑</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={s.logoutBtn} onPress={() => {
             if (Platform.OS === 'web') {
               if (window.confirm(`Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`)) logout();
@@ -185,6 +188,8 @@ const s = StyleSheet.create({
   headerSub:   { fontSize: 11, color: '#C4703F', fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase' },
   headerTitle: { fontSize: 26, fontWeight: '800', color: 'white', marginTop: 2 },
   headerUser: { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
+  trashBtn:  { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(192,84,122,0.15)', borderRadius: 10 },
+  trashBtnTxt: { fontSize: 16 },
   logoutBtn: { paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10 },
   logoutTxt: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)' },
   addBtn: { backgroundColor: '#C4703F', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },

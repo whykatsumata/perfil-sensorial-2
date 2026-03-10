@@ -5,6 +5,8 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
+const TRASH_DAYS = 30; // dias até expirar da lixeira
+
 // ── Helpers de coleção ──────────────────────────────────────
 function uid() {
   const u = auth.currentUser?.uid;
@@ -13,6 +15,7 @@ function uid() {
 }
 function patientsRef()    { return collection(db, 'users', uid(), 'patients'); }
 function evaluationsRef() { return collection(db, 'users', uid(), 'evaluations'); }
+function trashRef()       { return collection(db, 'users', uid(), 'trash'); }
 
 // ── Pacientes ───────────────────────────────────────────────
 export async function getPatients() {
@@ -28,9 +31,29 @@ export async function savePatient(patient) {
 }
 
 export async function deletePatient(patientId) {
+  // Busca o paciente para guardar na lixeira
+  const snap = await getDocs(query(patientsRef()));
+  const patientDoc = snap.docs.find(d => d.id === patientId);
+  if (patientDoc) {
+    await setDoc(doc(trashRef(), `patient_${patientId}`), {
+      type: 'patient',
+      data: { id: patientId, ...patientDoc.data() },
+      deletedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + TRASH_DAYS * 86400000).toISOString(),
+    });
+  }
+  // Move avaliações do paciente para a lixeira também
+  const evalSnap = await getDocs(query(evaluationsRef(), where('patientId', '==', patientId)));
+  await Promise.all(evalSnap.docs.map(async d => {
+    await setDoc(doc(trashRef(), `eval_${d.id}`), {
+      type: 'evaluation',
+      data: { id: d.id, ...d.data() },
+      deletedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + TRASH_DAYS * 86400000).toISOString(),
+    });
+    await deleteDoc(d.ref);
+  }));
   await deleteDoc(doc(patientsRef(), patientId));
-  const snap = await getDocs(query(evaluationsRef(), where('patientId', '==', patientId)));
-  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
 }
 
 // ── Avaliações ──────────────────────────────────────────────
@@ -50,7 +73,45 @@ export async function saveEvaluation(evaluation) {
 }
 
 export async function deleteEvaluation(evalId) {
+  const snap = await getDocs(query(evaluationsRef()));
+  const evalDoc = snap.docs.find(d => d.id === evalId);
+  if (evalDoc) {
+    await setDoc(doc(trashRef(), `eval_${evalId}`), {
+      type: 'evaluation',
+      data: { id: evalId, ...evalDoc.data() },
+      deletedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + TRASH_DAYS * 86400000).toISOString(),
+    });
+  }
   await deleteDoc(doc(evaluationsRef(), evalId));
+}
+
+// ── Lixeira ─────────────────────────────────────────────────
+export async function getTrash() {
+  const snap = await getDocs(query(trashRef(), orderBy('deletedAt', 'desc')));
+  return snap.docs.map(d => ({ trashId: d.id, ...d.data() }));
+}
+
+export async function restoreFromTrash(trashId) {
+  const snap = await getDocs(query(trashRef()));
+  const trashDoc = snap.docs.find(d => d.id === trashId);
+  if (!trashDoc) return;
+  const { type, data } = trashDoc.data();
+  if (type === 'patient') {
+    await setDoc(doc(patientsRef(), data.id), data);
+  } else if (type === 'evaluation') {
+    await setDoc(doc(evaluationsRef(), data.id), data);
+  }
+  await deleteDoc(trashDoc.ref);
+}
+
+export async function deleteFromTrash(trashId) {
+  await deleteDoc(doc(trashRef(), trashId));
+}
+
+export async function emptyTrash() {
+  const snap = await getDocs(query(trashRef()));
+  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
 }
 
 // ── Helpers ─────────────────────────────────────────────────
