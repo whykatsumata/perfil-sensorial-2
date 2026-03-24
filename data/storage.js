@@ -1,6 +1,6 @@
 // storage.js — Firestore (cloud) + helpers locais
 import {
-  collection, doc, getDocs, setDoc, deleteDoc,
+  collection, doc, getDoc, getDocs, setDoc, deleteDoc,
   query, where, orderBy,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
@@ -31,13 +31,12 @@ export async function savePatient(patient) {
 }
 
 export async function deletePatient(patientId) {
-  // Busca o paciente para guardar na lixeira
-  const snap = await getDocs(query(patientsRef()));
-  const patientDoc = snap.docs.find(d => d.id === patientId);
-  if (patientDoc) {
+  // Busca apenas o documento específico (não todos)
+  const patientSnap = await getDoc(doc(patientsRef(), patientId));
+  if (patientSnap.exists()) {
     await setDoc(doc(trashRef(), `patient_${patientId}`), {
       type: 'patient',
-      data: { id: patientId, ...patientDoc.data() },
+      data: { id: patientId, ...patientSnap.data() },
       deletedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + TRASH_DAYS * 86400000).toISOString(),
     });
@@ -73,12 +72,11 @@ export async function saveEvaluation(evaluation) {
 }
 
 export async function deleteEvaluation(evalId) {
-  const snap = await getDocs(query(evaluationsRef()));
-  const evalDoc = snap.docs.find(d => d.id === evalId);
-  if (evalDoc) {
+  const evalSnap = await getDoc(doc(evaluationsRef(), evalId));
+  if (evalSnap.exists()) {
     await setDoc(doc(trashRef(), `eval_${evalId}`), {
       type: 'evaluation',
-      data: { id: evalId, ...evalDoc.data() },
+      data: { id: evalId, ...evalSnap.data() },
       deletedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + TRASH_DAYS * 86400000).toISOString(),
     });
@@ -93,16 +91,15 @@ export async function getTrash() {
 }
 
 export async function restoreFromTrash(trashId) {
-  const snap = await getDocs(query(trashRef()));
-  const trashDoc = snap.docs.find(d => d.id === trashId);
-  if (!trashDoc) return;
-  const { type, data } = trashDoc.data();
+  const trashSnap = await getDoc(doc(trashRef(), trashId));
+  if (!trashSnap.exists()) return;
+  const { type, data } = trashSnap.data();
   if (type === 'patient') {
     await setDoc(doc(patientsRef(), data.id), data);
   } else if (type === 'evaluation') {
     await setDoc(doc(evaluationsRef(), data.id), data);
   }
-  await deleteDoc(trashDoc.ref);
+  await deleteDoc(trashSnap.ref);
 }
 
 export async function deleteFromTrash(trashId) {

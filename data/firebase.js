@@ -5,12 +5,12 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAay0c6ZGY7-98gjF6o6aFgr04gmRbkrMM",
-  authDomain: "perfil-sensorial-8b539.firebaseapp.com",
-  projectId: "perfil-sensorial-8b539",
-  storageBucket: "perfil-sensorial-8b539.firebasestorage.app",
-  messagingSenderId: "43551431037",
-  appId: "1:43551431037:web:ddf779a3dd82c3e91c9414",
+  apiKey:            process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain:        process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Evita inicializar múltiplas vezes em hot reload

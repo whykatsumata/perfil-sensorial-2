@@ -1,7 +1,16 @@
+# dependências
 node_modules/
+
+# expo
 .expo/
 dist/
 web-build/
-*.log
+
+# variáveis de ambiente — NUNCA commitar
 .env
 .env.local
+.env.production
+
+# sistema
+.DS_Store
+*.log
