@@ -299,15 +299,59 @@ export function calcScores(answers) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// getClassification — baseado nas faixas da tabela (pág. 8)
-// Muito menos / Menos / Exatamente como a maioria / Mais / Muito mais
+// TABELA OFICIAL DE CLASSIFICAÇÃO — pág. 8 do formulário PS2
+// Limites baseados em desvios padrão da curva normal:
+// Muito menos = ≤ -2DP | Menos = -2DP a -1DP | Típico = -1DP a +1DP
+// Mais = +1DP a +2DP | Muito mais = > +2DP
+//
+// Formato: [muito_menos_max, menos_max, tipico_max, mais_max]
+// Pontuações ACIMA de mais_max = Muito mais
+// null = faixa não disponível (ex: Oral/muito menos = **)
 // ─────────────────────────────────────────────────────────────
-export function getClassification(score, max) {
-  if (!max || max === 0) return { label: 'Sem dados', short: '—', color: '#888', bg: '#F5F5F5' };
+export const CLASSIFICATION_TABLE = {
+  // Quadrantes
+  EX:            [6,   19,  47,  60],   // /95
+  EV:            [7,   20,  46,  59],   // /100
+  SN:            [6,   17,  42,  53],   // /95
+  OB:            [6,   18,  43,  55],   // /110
+  // Seções sensoriais
+  auditivo:      [2,    9,  24,  31],   // /40
+  visual:        [4,    8,  17,  21],   // /30
+  tato:          [0,    7,  21,  28],   // /55  (muito menos = apenas 0)
+  movimento:     [1,    6,  18,  24],   // /40
+  posicao:       [0,    4,  15,  19],   // /40  (muito menos = apenas 0)
+  oral:          [null, 7,  24,  32],   // /50  (** sem faixa disponível)
+  // Seções comportamentais
+  conduta:       [1,    8,  22,  29],   // /45
+  socioemocional:[2,   12,  31,  41],   // /70
+  atencao:       [0,    8,  24,  31],   // /50  (muito menos = apenas 0)
+};
+
+export function getClassification(score, max, sectionId) {
+  if (score === undefined || score === null || !max)
+    return { label: 'Sem dados', short: '—', color: '#888', bg: '#F5F5F5' };
+
+  const table = sectionId ? CLASSIFICATION_TABLE[sectionId] : null;
+
+  if (table) {
+    const [mm, m, t, ma] = table;
+    // "Muito menos": mm === null significa que a faixa começa em 0 sem subdivisão
+    if (mm !== null && score <= mm)
+      return { label: 'Muito menos que outros(as)', short: 'Muito menos', color: '#C0547A', bg: '#FAEDF2' };
+    if (score <= m)
+      return { label: 'Menos que outros(as)',        short: 'Menos',       color: '#E07B2A', bg: '#FEF0E3' };
+    if (score <= t)
+      return { label: 'Exatamente como a maioria',  short: 'Típico',       color: '#4A9B5A', bg: '#E8F5EB' };
+    if (score <= ma)
+      return { label: 'Mais que outros(as)',         short: 'Mais',         color: '#3A6DB5', bg: '#E8F0FB' };
+    return   { label: 'Muito mais que outros(as)',  short: 'Muito mais',   color: '#7A5C9A', bg: '#F3EEFF' };
+  }
+
+  // Fallback para quando não há sectionId (não deveria ocorrer)
   const pct = score / max;
-  if (pct <= 0.13) return { label: 'Muito menos que outros(as)', short: 'Muito menos', color: '#C0547A', bg: '#FAEDF2' };
-  if (pct <= 0.36) return { label: 'Menos que outros(as)',        short: 'Menos',       color: '#E07B2A', bg: '#FEF0E3' };
-  if (pct <= 0.72) return { label: 'Exatamente como a maioria',  short: 'Típico',       color: '#4A9B5A', bg: '#E8F5EB' };
-  if (pct <= 0.88) return { label: 'Mais que outros(as)',         short: 'Mais',         color: '#3A6DB5', bg: '#E8F0FB' };
-  return               { label: 'Muito mais que outros(as)',  short: 'Muito mais',   color: '#7A5C9A', bg: '#F3EEFF' };
+  if (pct <= 0.07) return { label: 'Muito menos que outros(as)', short: 'Muito menos', color: '#C0547A', bg: '#FAEDF2' };
+  if (pct <= 0.21) return { label: 'Menos que outros(as)',        short: 'Menos',       color: '#E07B2A', bg: '#FEF0E3' };
+  if (pct <= 0.50) return { label: 'Exatamente como a maioria',  short: 'Típico',       color: '#4A9B5A', bg: '#E8F5EB' };
+  if (pct <= 0.62) return { label: 'Mais que outros(as)',         short: 'Mais',         color: '#3A6DB5', bg: '#E8F0FB' };
+  return             { label: 'Muito mais que outros(as)',  short: 'Muito mais',   color: '#7A5C9A', bg: '#F3EEFF' };
 }

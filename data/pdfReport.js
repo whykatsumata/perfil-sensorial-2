@@ -1,4 +1,4 @@
-import { SECTIONS, QUADRANTS, calcScores, getClassification } from './sensoryData';
+import { SECTIONS, QUADRANTS, calcScores, getClassification, CLASSIFICATION_TABLE } from './sensoryData';
 import { calcAge, formatDate } from './storage';
 
 export function buildReportHTML(patient, evaluation) {
@@ -12,8 +12,13 @@ export function buildReportHTML(patient, evaluation) {
     posicao:'💪', oral:'👅', conduta:'🧠', socioemocional:'❤️', atencao:'🧩',
   };
 
-  function bar(pct, color, h = 12) {
-    const zones = [35, 50, 75, 88].map(p =>
+  function bar(pct, color, h = 12, limits = null, max = null) {
+    // Se receber limites absolutos, converte para % relativo ao max
+    // Senão, usa zonas genéricas em 35/50/75/88%
+    const zonePcts = (limits && max)
+      ? limits.map(l => l !== null ? Math.round((l / max) * 100) : null).filter(l => l !== null)
+      : [35, 50, 75, 88];
+    const zones = zonePcts.map(p =>
       `<div style="position:absolute;left:${p}%;top:0;bottom:0;width:1.5px;background:rgba(0,0,0,0.2);z-index:2;"></div>`
     ).join('');
     return `<div style="position:relative;height:${h}px;background:#EDE5D8;border-radius:${h}px;overflow:hidden;">
@@ -41,11 +46,11 @@ export function buildReportHTML(patient, evaluation) {
     const score = quadrantScores[q.id];
     const max   = quadrantMax[q.id];
     const pct   = max > 0 ? (score / max) * 100 : 0;
-    const cls   = getClassification(score, max);
+    const cls   = getClassification(score, max, q.id);
     return `<div style="width:48%;background:white;border-radius:10px;padding:14px;border-top:3px solid ${q.color};break-inside:avoid;">
       <div style="font-weight:800;font-size:13px;color:${q.color};margin-bottom:3px;">${q.name}</div>
       <div style="font-size:9px;color:#8C7B6B;margin-bottom:8px;line-height:1.4;">${q.desc}</div>
-      ${bar(pct, q.color, 8)}
+      ${bar(pct, q.color, 8, CLASSIFICATION_TABLE[q.id], q.maxScore)}
       <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;">
         <span style="font-size:22px;font-weight:800;color:${q.color};">${score}<span style="font-size:11px;color:#8C7B6B;font-weight:400;">/${max}</span></span>
         <span style="font-size:10px;color:#8C7B6B;">${Math.round(pct)}%</span>
@@ -59,10 +64,10 @@ export function buildReportHTML(patient, evaluation) {
     const score = quadrantScores[q.id];
     const max   = quadrantMax[q.id];
     const pct   = max > 0 ? (score / max) * 100 : 0;
-    const cls   = getClassification(score, max);
+    const cls   = getClassification(score, max, q.id);
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <div style="width:110px;font-size:11px;font-weight:700;color:#1A1714;text-align:right;flex-shrink:0;">${q.shortName}</div>
-      <div style="flex:1;">${bar(pct, q.color, 13)}</div>
+      <div style="flex:1;">${bar(pct, q.color, 13, CLASSIFICATION_TABLE[q.id], q.maxScore)}</div>
       <div style="width:32px;font-size:10px;color:#8C7B6B;text-align:right;flex-shrink:0;">${Math.round(pct)}%</div>
       <div style="width:130px;flex-shrink:0;">${badge(cls)}</div>
     </div>`;
@@ -72,12 +77,12 @@ export function buildReportHTML(patient, evaluation) {
   const sectionsChart = SECTIONS.map(sec => {
     const sc  = sectionScores[sec.id];
     const pct = sc.max > 0 ? (sc.total / sc.max) * 100 : 0;
-    const cls = getClassification(sc.total, sc.max);
+    const cls = getClassification(sc.total, sc.max, sec.id);
     return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px;background:white;border-radius:8px;">
       <div style="font-size:18px;width:26px;text-align:center;flex-shrink:0;">${SEC_EMOJI[sec.id] || '•'}</div>
       <div style="flex:1;">
         <div style="font-size:10px;font-weight:700;color:#1A1714;margin-bottom:4px;">${sec.fullName}</div>
-        ${bar(pct, sec.color, 8)}
+        ${bar(pct, sec.color, 8, CLASSIFICATION_TABLE[sec.id], sc.max)}
       </div>
       <div style="text-align:right;flex-shrink:0;min-width:52px;">
         <div style="font-size:11px;font-weight:700;color:#1A1714;margin-bottom:3px;">${sc.total}/${sc.max}</div>

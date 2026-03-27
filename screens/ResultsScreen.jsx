@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { SECTIONS, QUADRANTS, calcScores, getClassification } from '../data/sensoryData';
+import { SECTIONS, QUADRANTS, calcScores, getClassification, CLASSIFICATION_TABLE } from '../data/sensoryData';
 import { getEvaluations, getPatients, saveEvaluation, formatDate, calcAge } from '../data/storage';
 import { buildReportHTML } from '../data/pdfReport';
 
@@ -111,13 +111,13 @@ export default function ResultsScreen({ navigation, route }) {
     txt += `Paciente: ${patient.name}\nIdade: ${calcAge(patient.dob)}\nData: ${formatDate(evaluation.finishedAt || evaluation.startedAt)}\n\n`;
     txt += `QUADRANTES:\n`;
     QUADRANTS.forEach(q => {
-      const cls = getClassification(quadrantScores[q.id], quadrantMax[q.id]);
+      const cls = getClassification(quadrantScores[q.id], quadrantMax[q.id], q.id);
       txt += `• ${q.name}: ${quadrantScores[q.id]}/${quadrantMax[q.id]} — ${cls.label}\n`;
     });
     txt += `\nSISTEMAS SENSORIAIS:\n`;
     SECTIONS.forEach(sec => {
       const sc  = sectionScores[sec.id];
-      const cls = getClassification(sc.total, sc.max);
+      const cls = getClassification(sc.total, sc.max, sec.id);
       txt += `• ${sec.fullName}: ${sc.total}/${sc.max} — ${cls.label}\n`;
     });
     await Share.share({ message: txt, title: 'Perfil Sensorial 2' });
@@ -168,13 +168,13 @@ export default function ResultsScreen({ navigation, route }) {
             const score = quadrantScores[q.id];
             const max   = quadrantMax[q.id];
             const pct   = max > 0 ? score / max : 0;
-            const cls   = getClassification(score, max);
+            const cls   = getClassification(score, max, q.id);
             return (
               <View key={q.id} style={[s.quadCard, { borderTopColor: q.color }]}>
                 <Text style={s.quadEmoji}>{q.emoji}</Text>
                 <Text style={[s.quadName, { color: q.color }]}>{q.name}</Text>
                 <Text style={s.quadDesc}>{q.desc}</Text>
-                <HBar pct={pct * 100} color={q.color} height={8} />
+                <HBar pct={pct * 100} color={q.color} height={8} limits={CLASSIFICATION_TABLE[q.id]} max={q.maxScore} />
                 <View style={s.quadScoreRow}>
                   <Text style={[s.quadScore, { color: q.color }]}>{score}<Text style={s.quadMax}>/{max}</Text></Text>
                   <Text style={{ fontSize: 11, color: '#8C7B6B' }}>{Math.round(pct * 100)}%</Text>
@@ -192,11 +192,11 @@ export default function ResultsScreen({ navigation, route }) {
             const score = quadrantScores[q.id];
             const max   = quadrantMax[q.id];
             const pct   = max > 0 ? (score / max) * 100 : 0;
-            const cls   = getClassification(score, max);
+            const cls   = getClassification(score, max, q.id);
             return (
               <View key={q.id} style={s.hRow}>
                 <Text style={s.hLabel}>{q.shortName}</Text>
-                <View style={{ flex: 1 }}><HBar pct={pct} color={q.color} height={12} /></View>
+                <View style={{ flex: 1 }}><HBar pct={pct} color={q.color} height={12} limits={CLASSIFICATION_TABLE[q.id]} max={q.maxScore} /></View>
                 <Text style={s.hPct}>{Math.round(pct)}%</Text>
                 <ClsBadge cls={cls} small />
               </View>
@@ -225,13 +225,13 @@ export default function ResultsScreen({ navigation, route }) {
           {SECTIONS.map(sec => {
             const sc  = sectionScores[sec.id];
             const pct = sc.max > 0 ? (sc.total / sc.max) * 100 : 0;
-            const cls = getClassification(sc.total, sc.max);
+            const cls = getClassification(sc.total, sc.max, sec.id);
             return (
               <View key={sec.id} style={s.hRow}>
                 <Text style={s.hEmoji}>{SEC_EMOJI[sec.id]}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={s.hSecName}>{sec.name}</Text>
-                  <HBar pct={pct} color={sec.color} height={10} />
+                  <HBar pct={pct} color={sec.color} height={10} limits={CLASSIFICATION_TABLE[sec.id]} max={sc.max} />
                 </View>
                 <View style={{ alignItems: 'flex-end', minWidth: 52 }}>
                   <Text style={{ fontSize: 11, fontWeight: '700', color: '#1A1714' }}>{sc.total}/{sc.max}</Text>
@@ -260,12 +260,13 @@ export default function ResultsScreen({ navigation, route }) {
         {/* ── LEGENDA ── */}
         <View style={s.legendCard}>
           <Text style={s.legendTitle}>LEGENDA DE CLASSIFICAÇÃO</Text>
+          <Text style={{ fontSize: 10, color: '#B0A090', marginBottom: 10 }}>Baseada na curva normal (desvios padrão) — tabela oficial PS2</Text>
           {[
-            { label: 'Muito menos que outros(as)', color: '#C0547A', bg: '#FAEDF2', range: '0–13%' },
-            { label: 'Menos que outros(as)',        color: '#E07B2A', bg: '#FEF0E3', range: '14–36%' },
-            { label: 'Exatamente como a maioria',  color: '#4A9B5A', bg: '#E8F5EB', range: '37–72%' },
-            { label: 'Mais que outros(as)',         color: '#3A6DB5', bg: '#E8F0FB', range: '73–88%' },
-            { label: 'Muito mais que outros(as)',   color: '#7A5C9A', bg: '#F3EEFF', range: '89–100%' },
+            { label: 'Muito menos que outros(as)', color: '#C0547A', bg: '#FAEDF2', range: '≤ −2 DP' },
+            { label: 'Menos que outros(as)',        color: '#E07B2A', bg: '#FEF0E3', range: '−2 a −1 DP' },
+            { label: 'Exatamente como a maioria',  color: '#4A9B5A', bg: '#E8F5EB', range: '−1 a +1 DP' },
+            { label: 'Mais que outros(as)',         color: '#3A6DB5', bg: '#E8F0FB', range: '+1 a +2 DP' },
+            { label: 'Muito mais que outros(as)',   color: '#7A5C9A', bg: '#F3EEFF', range: '≥ +2 DP' },
           ].map(item => (
             <View key={item.label} style={s.legendRow}>
               <View style={[s.legendDot, { backgroundColor: item.color }]} />
@@ -297,11 +298,15 @@ export default function ResultsScreen({ navigation, route }) {
 
 // ── Sub-components ─────────────────────────────────────────
 
-function HBar({ pct, color, height = 10 }) {
+function HBar({ pct, color, height = 10, limits = null, max = null }) {
+  // Converte limites absolutos para % relativo ao max da escala
+  const zones = (limits && max)
+    ? limits.filter(l => l !== null).map(l => Math.round((l / max) * 100))
+    : [35, 50, 75, 88];
   return (
     <View style={{ height, backgroundColor: '#F0EAE0', borderRadius: height, overflow: 'hidden', position: 'relative' }}>
       <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min(Math.round(pct), 100)}%`, backgroundColor: color, borderRadius: height }} />
-      {[35, 50, 75, 88].map(z => (
+      {zones.map(z => (
         <View key={z} style={{ position: 'absolute', left: `${z}%`, top: 0, bottom: 0, width: 1.5, backgroundColor: 'rgba(0,0,0,0.2)', zIndex: 2 }} />
       ))}
     </View>
