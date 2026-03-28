@@ -111,6 +111,23 @@ export async function emptyTrash() {
   await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
 }
 
+// ── Perfil do usuário ───────────────────────────────────────
+export async function saveUserProfile(userObj) {
+  try {
+    const { doc: firestoreDoc, setDoc: firestoreSetDoc } = await import('firebase/firestore');
+    await firestoreSetDoc(
+      firestoreDoc(db, 'userProfiles', userObj.uid),
+      {
+        uid:         userObj.uid,
+        email:       userObj.email       || '',
+        displayName: userObj.displayName || '',
+        updatedAt:   new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  } catch { /* silencia erros de perfil */ }
+}
+
 // ── Helpers ─────────────────────────────────────────────────
 export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);

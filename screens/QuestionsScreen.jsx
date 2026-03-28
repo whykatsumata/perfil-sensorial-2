@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform,
+  View, Text, TouchableOpacity, ScrollView, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { SECTIONS, OPTIONS, QUADRANT_META } from '../data/sensoryData';
 import { getEvaluations, getPatients, saveEvaluation } from '../data/storage';
+import { webAlert } from '../utils/webAlert';
 
 export default function QuestionsScreen({ navigation, route }) {
   const { evaluationId, patientId } = route.params;
@@ -70,16 +71,14 @@ export default function QuestionsScreen({ navigation, route }) {
 
   async function goNext() {
     if (!secComplete) {
-      Platform.OS === 'web'
-        ? window.alert(`Ainda há ${section.items.length - secAnswered} item(ns) sem resposta nesta seção.`)
-        : Alert.alert('Seção incompleta', `Ainda há ${section.items.length - secAnswered} item(ns) sem resposta.`);
+      webAlert('Seção incompleta', `Ainda há ${section.items.length - secAnswered} item(ns) sem resposta nesta seção.`);
       return;
     }
     const nextIdx = sectionIdx + 1;
     if (nextIdx < SECTIONS.length) {
       setSectionIdx(nextIdx);
       await saveEvaluation({ ...evalRef.current, answers, sectionIdx: nextIdx, status: 'draft' });
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 50);
     } else {
       const finished = { ...evalRef.current, answers, sectionIdx, status: 'complete', finishedAt: new Date().toISOString() };
       await saveEvaluation(finished);
@@ -92,7 +91,7 @@ export default function QuestionsScreen({ navigation, route }) {
       const prev = sectionIdx - 1;
       setSectionIdx(prev);
       saveEvaluation({ ...evalRef.current, answers, sectionIdx: prev });
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: true }), 50);
     } else {
       saveAndExit();
     }

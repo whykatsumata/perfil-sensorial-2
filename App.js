@@ -15,6 +15,23 @@ import TrashScreen         from './screens/TrashScreen';
 
 const Stack = createNativeStackNavigator();
 
+// Mapeamento de rotas para URLs — controla o botão Voltar do navegador
+const linking = {
+  prefixes: [],
+  config: {
+    screens: {
+      Login:         'login',
+      Patients:      'patients',
+      PatientForm:   'patients/form',
+      PatientDetail: 'patients/:patientId',
+      Questions:     'patients/:patientId/questions/:evaluationId',
+      Results:       'patients/:patientId/results/:evaluationId',
+      Review:        'patients/:patientId/review/:evaluationId',
+      Trash:         'trash',
+    },
+  },
+};
+
 // ── Estilos globais para web ─────────────────────────────────
 if (Platform.OS === 'web') {
   const style = document.createElement('style');
@@ -93,13 +110,14 @@ function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar style="light" backgroundColor="#0F1923" />
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
           animation: Platform.OS === 'web' ? 'none' : 'slide_from_right',
           contentStyle: { backgroundColor: '#F5F3EF' },
+          gestureEnabled: Platform.OS !== 'web',
         }}
       >
         {user ? (

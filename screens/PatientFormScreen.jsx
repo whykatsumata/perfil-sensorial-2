@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Platform, KeyboardAvoidingView, Alert,
+  StyleSheet, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { savePatient, generateId } from '../data/storage';
+import { webAlert } from '../utils/webAlert';
 
 const RELATIONS = ['Mãe', 'Pai', 'Avó / Avô', 'Outro responsável', 'Professor(a)', 'Terapeuta'];
 
@@ -31,7 +32,7 @@ export default function PatientFormScreen({ navigation, route }) {
 
   async function save() {
     if (!form.name.trim()) {
-      Platform.OS === 'web' ? window.alert('Informe o nome do paciente.') : Alert.alert('Campo obrigatório', 'Informe o nome do paciente.');
+      webAlert('Campo obrigatório', 'Informe o nome do paciente.');
       return;
     }
     const patient = {

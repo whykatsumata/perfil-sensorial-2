@@ -1,9 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{collection}/{docId} {
 
-      // Só o dono autenticado acessa
+    // Dados do usuário — só o próprio dono acessa
+    match /users/{userId}/{collection}/{docId} {
       allow read: if request.auth != null && request.auth.uid == userId;
 
       allow create: if request.auth != null
@@ -17,18 +17,24 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Valida estrutura mínima por coleção
+    // Perfis públicos — qualquer usuário autenticado pode ler/escrever o próprio
+    match /userProfiles/{uid} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Validação de estrutura por coleção
     function validDoc(col, data) {
       return col == 'patients'    ? validPatient(data)    :
              col == 'evaluations' ? validEvaluation(data) :
              col == 'trash'       ? validTrash(data)      :
-             false; // bloqueia qualquer outra coleção
+             false;
     }
 
     function validPatient(d) {
       return d.keys().hasAll(['id', 'name', 'createdAt'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 200
-        && d.id   is string && d.id.size() > 0   && d.id.size()   <= 100
+        && d.id   is string && d.id.size()   > 0 && d.id.size()   <= 100
         && (d.get('notes',      '') is string && d.get('notes',      '').size() <= 2000)
         && (d.get('diagnosis',  '') is string && d.get('diagnosis',  '').size() <= 500)
         && (d.get('respondent', '') is string && d.get('respondent', '').size() <= 200);
@@ -39,7 +45,7 @@ service cloud.firestore {
         && d.id        is string && d.id.size()        > 0 && d.id.size()        <= 100
         && d.patientId is string && d.patientId.size() > 0 && d.patientId.size() <= 100
         && d.status in ['draft', 'complete']
-        && (d.get('evaluator', '') is string && d.get('evaluator', '').size() <= 200)
+        && (d.get('evaluator',   '') is string && d.get('evaluator',   '').size() <= 200)
         && (d.get('commentQuad', '') is string && d.get('commentQuad', '').size() <= 5000)
         && (d.get('commentSec',  '') is string && d.get('commentSec',  '').size() <= 5000);
     }

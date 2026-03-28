@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  Share, Alert, ActivityIndicator, TextInput, Platform,
+  Share, ActivityIndicator, TextInput, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,6 +10,7 @@ import * as Sharing from 'expo-sharing';
 import { SECTIONS, QUADRANTS, calcScores, getClassification, CLASSIFICATION_TABLE } from '../data/sensoryData';
 import { getEvaluations, getPatients, saveEvaluation, formatDate, calcAge } from '../data/storage';
 import { buildReportHTML } from '../data/pdfReport';
+import { webAlert } from '../utils/webAlert';
 
 const SEC_EMOJI = { auditivo:'👂', visual:'👁', tato:'✋', movimento:'🌀', posicao:'💪', oral:'👅', conduta:'🧠', socioemocional:'❤️', atencao:'🧩' };
 
@@ -53,21 +54,14 @@ export default function ResultsScreen({ navigation, route }) {
       const html = buildReportHTML(patient, { ...evaluation, commentQuad, commentSec });
 
       if (Platform.OS === 'web') {
-        // Web: abre relatório em nova aba já pronto para Ctrl+P / Salvar como PDF
-        const win = window.open('', '_blank');
-        if (!win) {
-          Alert.alert('Popup bloqueado', 'Permita popups para este site nas configurações do navegador.');
-          setPdfLoading(false);
-          return;
-        }
-        // Injeta CSS de impressão A4 perfeito direto no HTML
-        const printHtml = html.replace('</style>', `
+        // Web: Blob + createObjectURL — não é bloqueado como popup
+        const printHtml = html
+          .replace('</style>', `
   @media print {
     html, body { width: 210mm; margin: 0 !important; padding: 0 !important; background: white !important; }
     .page { padding: 20mm !important; }
     .block { break-inside: avoid !important; page-break-inside: avoid !important; }
   }
-  /* Botão fixo no canto — desaparece ao imprimir */
   #print-btn {
     position: fixed; bottom: 24px; right: 24px; z-index: 999;
     background: #C4703F; color: white; border: none; border-radius: 12px;
@@ -75,13 +69,20 @@ export default function ResultsScreen({ navigation, route }) {
     cursor: pointer; box-shadow: 0 4px 16px rgba(196,112,63,0.4);
   }
   @media print { #print-btn { display: none !important; } }
-</style>`);
-        const finalHtml = printHtml.replace('</body>', `
+</style>`)
+          .replace('</body>', `
   <button id="print-btn" onclick="window.print()">🖨️ Salvar / Imprimir PDF</button>
 </body>`);
-        win.document.open();
-        win.document.write(finalHtml);
-        win.document.close();
+        const blob = new Blob([printHtml], { type: 'text/html;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
         setPdfLoading(false);
         return;
       } else {
@@ -95,11 +96,11 @@ export default function ResultsScreen({ navigation, route }) {
             UTI: 'com.adobe.pdf',
           });
         } else {
-          Alert.alert('PDF gerado', `Arquivo salvo em:\n${uri}`);
+          webAlert('PDF gerado', `Arquivo salvo em:\n${uri}`);
         }
       }
     } catch (e) {
-      Alert.alert('Erro ao gerar PDF', e.message);
+      webAlert('Erro ao gerar PDF', e.message);
     } finally {
       setPdfLoading(false);
     }
@@ -127,7 +128,7 @@ export default function ResultsScreen({ navigation, route }) {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => navigation.navigate('PatientDetail', { patientId })} style={s.backBtn}>
           <Text style={s.backBtnTxt}>←</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
@@ -260,18 +261,18 @@ export default function ResultsScreen({ navigation, route }) {
         {/* ── LEGENDA ── */}
         <View style={s.legendCard}>
           <Text style={s.legendTitle}>LEGENDA DE CLASSIFICAÇÃO</Text>
-          <Text style={{ fontSize: 10, color: '#B0A090', marginBottom: 10 }}>Baseada na curva normal (desvios padrão) — tabela oficial PS2</Text>
           {[
-            { label: 'Muito menos que outros(as)', color: '#C0547A', bg: '#FAEDF2', range: '≤ −2 DP' },
-            { label: 'Menos que outros(as)',        color: '#E07B2A', bg: '#FEF0E3', range: '−2 a −1 DP' },
-            { label: 'Exatamente como a maioria',  color: '#4A9B5A', bg: '#E8F5EB', range: '−1 a +1 DP' },
-            { label: 'Mais que outros(as)',         color: '#3A6DB5', bg: '#E8F0FB', range: '+1 a +2 DP' },
-            { label: 'Muito mais que outros(as)',   color: '#7A5C9A', bg: '#F3EEFF', range: '≥ +2 DP' },
+            { label: 'Muito menos que outros(as)', color: '#C0547A', bg: '#FAEDF2' },
+            { label: 'Menos que outros(as)',        color: '#E07B2A', bg: '#FEF0E3' },
+            { label: 'Exatamente como a maioria',  color: '#4A9B5A', bg: '#E8F5EB' },
+            { label: 'Mais que outros(as)',         color: '#3A6DB5', bg: '#E8F0FB' },
+            { label: 'Muito mais que outros(as)',   color: '#7A5C9A', bg: '#F3EEFF' },
           ].map(item => (
             <View key={item.label} style={s.legendRow}>
               <View style={[s.legendDot, { backgroundColor: item.color }]} />
-              <Text style={s.legendTxt}>{item.label}</Text>
-              <Text style={[s.legendRange, { color: item.color }]}>{item.range}</Text>
+              <View style={{ flex: 1, backgroundColor: item.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: item.color }}>{item.label}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -286,7 +287,7 @@ export default function ResultsScreen({ navigation, route }) {
           <TouchableOpacity style={s.btnShare} onPress={shareText} activeOpacity={0.85}>
             <Text style={s.btnShareTxt}>↑ Compartilhar como Texto</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.btnBack2} onPress={() => navigation.goBack()} activeOpacity={0.85}>
+          <TouchableOpacity style={s.btnBack2} onPress={() => navigation.navigate('PatientDetail', { patientId })} activeOpacity={0.85}>
             <Text style={s.btnBack2Txt}>← Voltar ao Paciente</Text>
           </TouchableOpacity>
         </View>

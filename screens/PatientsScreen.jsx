@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { getPatients, getEvaluations, deletePatient, calcAge, formatDate } from '../data/storage';
 import { useAuth } from '../context/AuthContext';
+import { webAlert } from '../utils/webAlert';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function PatientsScreen({ navigation }) {
@@ -65,16 +66,14 @@ export default function PatientsScreen({ navigation }) {
           <TouchableOpacity style={s.trashBtn} onPress={() => navigation.navigate('Trash')}>
             <Text style={s.trashBtnTxt}>🗑</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.logoutBtn} onPress={() => {
-            if (Platform.OS === 'web') {
-              if (window.confirm(`Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`)) logout();
-            } else {
-              Alert.alert('Trocar de conta',
-                `Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`,
-                [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sair', style: 'destructive', onPress: logout }]
-              );
-            }
-          }}>
+          <TouchableOpacity style={s.logoutBtn} onPress={() => webAlert(
+            'Trocar de conta',
+            `Logado como: ${user?.displayName || user?.email || 'usuário'}\n\nDeseja sair e entrar com outra conta?`,
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Sair', style: 'destructive', onPress: logout },
+            ]
+          )}>
             <Text style={s.logoutTxt}>⎋ Sair</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.addBtn} onPress={() => navigation.navigate('PatientForm', {})}>

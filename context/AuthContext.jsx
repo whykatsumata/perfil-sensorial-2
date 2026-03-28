@@ -8,6 +8,7 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '../data/firebase';
+import { saveUserProfile } from '../data/storage';
 
 const AuthContext = createContext(null);
 
@@ -17,7 +18,12 @@ export function AuthProvider({ children }) {
   const [error,   setError]   = useState('');
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => setUser(u ?? null));
+    const unsub = onAuthStateChanged(auth, async u => {
+      if (u) {
+        try { await saveUserProfile(u); } catch { /* ignora — sem internet etc */ }
+      }
+      setUser(u ?? null);
+    });
     return unsub;
   }, []);
 
@@ -31,6 +37,7 @@ export function AuthProvider({ children }) {
       // onAuthStateChanged vai atualizar o user automaticamente
       // forçamos reload do user para garantir displayName atualizado
       await cred.user.reload();
+      try { await saveUserProfile({ ...auth.currentUser, displayName: name }); } catch { }
       setUser(auth.currentUser);
     } catch (e) {
       setError(friendlyError(e.code));

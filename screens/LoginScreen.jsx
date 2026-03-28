@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { webAlert } from '../utils/webAlert';
 
 export default function LoginScreen() {
   const { login, register, resetPassword, loading, error, clearError } = useAuth();
@@ -25,7 +26,7 @@ export default function LoginScreen() {
       await register(name.trim(), email.trim(), password);
     } else {
       const ok = await resetPassword(email.trim());
-      if (ok) { Platform.OS === 'web' ? window.alert('E-mail enviado! Verifique sua caixa de entrada.') : Alert.alert('E-mail enviado', 'Verifique sua caixa de entrada para redefinir a senha.'); }
+      if (ok) webAlert('E-mail enviado', 'Verifique sua caixa de entrada para redefinir a senha.');
       switchMode('login');
     }
   }
