@@ -21,6 +21,7 @@ export default function ResultsScreen({ navigation, route }) {
   const [pdfLoading,    setPdfLoading]    = useState(false);
   const [commentQuad,   setCommentQuad]   = useState('');
   const [commentSec,    setCommentSec]    = useState('');
+  const [signatures,    setSignatures]    = useState([{ name: '', profession: '', register: '' }]);
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
@@ -51,7 +52,7 @@ export default function ResultsScreen({ navigation, route }) {
   async function exportPDF() {
     try {
       setPdfLoading(true);
-      const html = buildReportHTML(patient, { ...evaluation, commentQuad, commentSec });
+      const html = buildReportHTML(patient, { ...evaluation, commentQuad, commentSec }, signatures);
 
       if (Platform.OS === 'web') {
         // Web: Blob + createObjectURL — não é bloqueado como popup
@@ -277,6 +278,57 @@ export default function ResultsScreen({ navigation, route }) {
           ))}
         </View>
 
+        {/* ── ASSINATURAS ── */}
+        <View style={s.sigCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <Text style={s.sigCardTitle}>✍️ Assinaturas</Text>
+            <TouchableOpacity
+              style={s.sigAddBtn}
+              onPress={() => setSignatures(prev => [...prev, { name: '', profession: '', register: '' }])}
+            >
+              <Text style={s.sigAddBtnTxt}>+ Assinatura</Text>
+            </TouchableOpacity>
+          </View>
+
+          {signatures.map((sig, idx) => (
+            <View key={idx} style={s.sigItem}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <View style={{ width: 28, height: 3, backgroundColor: '#C4703F', borderRadius: 2 }} />
+                {signatures.length > 1 && (
+                  <TouchableOpacity onPress={() => setSignatures(prev => prev.filter((_, i) => i !== idx))}>
+                    <Text style={{ fontSize: 12, color: '#C0547A', fontWeight: '700' }}>✕ Remover</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TextInput
+                style={s.sigInput}
+                placeholder="Nome completo"
+                placeholderTextColor="#B0A090"
+                value={sig.name}
+                onChangeText={v => setSignatures(prev => prev.map((sg, i) => i === idx ? { ...sg, name: v } : sg))}
+              />
+              <TextInput
+                style={s.sigInput}
+                placeholder="Profissão"
+                placeholderTextColor="#B0A090"
+                value={sig.profession}
+                onChangeText={v => setSignatures(prev => prev.map((sg, i) => i === idx ? { ...sg, profession: v } : sg))}
+              />
+              <TextInput
+                style={[s.sigInput, { marginBottom: 0 }]}
+                placeholder="Nº de registro no conselho"
+                placeholderTextColor="#B0A090"
+                value={sig.register}
+                onChangeText={v => setSignatures(prev => prev.map((sg, i) => i === idx ? { ...sg, register: v } : sg))}
+              />
+            </View>
+          ))}
+
+          <Text style={{ fontSize: 10, color: '#B0A090', marginTop: 10, textAlign: 'center' }}>
+            As assinaturas aparecerão no PDF ao exportar
+          </Text>
+        </View>
+
         {/* ── AÇÕES ── */}
         <View style={{ gap: 10, marginBottom: 16 }}>
           <TouchableOpacity style={s.btnPDF} onPress={exportPDF} disabled={pdfLoading} activeOpacity={0.85}>
@@ -408,4 +460,11 @@ const s = StyleSheet.create({
   commentCard: { backgroundColor: 'white', borderRadius: 14, padding: 16, marginBottom: 20, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#C4703F' },
   commentLabel: { fontSize: 12, fontWeight: '700', color: '#8C7B6B', marginBottom: 10, letterSpacing: 0.5 },
   commentInput: { backgroundColor: '#F5F3EF', borderRadius: 10, padding: 12, fontSize: 14, color: '#1A1714', minHeight: 90, borderWidth: 1.5, borderColor: '#E0D8CC' },
+
+  sigCard:     { backgroundColor: 'white', borderRadius: 14, padding: 16, marginBottom: 20, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#C4703F' },
+  sigCardTitle:{ fontSize: 14, fontWeight: '800', color: '#1A1714' },
+  sigAddBtn:   { backgroundColor: '#0F1923', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  sigAddBtnTxt:{ color: 'white', fontSize: 12, fontWeight: '700' },
+  sigItem:     { backgroundColor: '#F9F6F2', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#C4703F' },
+  sigInput:    { backgroundColor: 'white', borderWidth: 1.5, borderColor: '#E0D8CC', borderRadius: 8, padding: 10, fontSize: 14, color: '#1A1714', marginBottom: 8 },
 });

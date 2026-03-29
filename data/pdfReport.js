@@ -1,7 +1,7 @@
 import { SECTIONS, QUADRANTS, calcScores, getClassification, CLASSIFICATION_TABLE } from './sensoryData';
 import { calcAge, formatDate } from './storage';
 
-export function buildReportHTML(patient, evaluation) {
+export function buildReportHTML(patient, evaluation, signatures = []) {
   const answers = evaluation.answers || {};
   const { sectionScores, quadrantScores, quadrantMax } = calcScores(answers);
   const date = formatDate(evaluation.finishedAt || evaluation.startedAt);
@@ -203,6 +203,22 @@ export function buildReportHTML(patient, evaluation) {
       </div>
     </div>
   </div>
+
+  <!-- Assinaturas -->
+  ${signatures.filter(s => s.name || s.profession || s.register).length > 0 ? `
+  <div class="block" style="break-before:avoid;">
+    <div style="background:white;border-radius:10px;padding:20px 20px 16px;">
+      <div style="display:flex;flex-wrap:wrap;gap:32px;justify-content:center;">
+        ${signatures.filter(s => s.name || s.profession || s.register).map(sig => `
+          <div style="flex:1;min-width:160px;max-width:220px;text-align:center;">
+            <div style="border-bottom:1.5px solid #1A1714;height:52px;margin-bottom:8px;"></div>
+            <div style="font-size:12px;font-weight:700;color:#1A1714;">${sig.name || ''}</div>
+            ${sig.profession ? `<div style="font-size:11px;color:#5C5050;margin-top:2px;">${sig.profession}</div>` : ''}
+            ${sig.register   ? `<div style="font-size:10px;color:#8C7B6B;margin-top:2px;">${sig.register}</div>`   : ''}
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>` : ''}
 
   <!-- Rodapé -->
   <div style="text-align:center;padding:10px;font-size:8px;color:#B0A090;border-top:1px solid #E0D8CC;margin-top:6px;">
